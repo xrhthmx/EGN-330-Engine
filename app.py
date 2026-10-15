@@ -1,6 +1,6 @@
 """
-EGN 330: Coastal Wave Mechanics — Master Computational Engine (v3.0)
-Fully Merged Implementation: Modules M07 through M13 (Exam-Compliant High-Contrast GoodNotes UI)
+EGN 330: Coastal Wave Mechanics — Master Computational Engine (v4.0)
+Fully Merged Implementation: Modules M07 through M14 (Exam-Compliant High-Contrast GoodNotes UI)
 Dr. Zhangping (John) Wei, UNCW
 """
 import math
@@ -12,7 +12,7 @@ from scipy.optimize import root_scalar
 # 1. PAGE CONFIGURATION & HIGH-CONTRAST STYLING
 # ==========================================
 st.set_page_config(
-    page_title="EGN 330: Master Engine (M07–M13)",
+    page_title="EGN 330: Master Engine v4.0 (M07–M14)",
     page_icon="🌊",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -24,28 +24,49 @@ st.markdown("""
     .main-title { font-size: 1.85rem; font-weight: 800; color: #facc15; margin-bottom: 0.15rem; letter-spacing: -0.02em; }
     .sub-title { font-size: 0.95rem; color: #cbd5e1; margin-bottom: 1.0rem; font-weight: 500; }
     
-    /* GoodNotes Top Knowns & Blue Find Box */
+    /* GoodNotes Top Knowns Box with Red-Derived Variable Symbols */
     .gn-knowns-box {
         background-color: #09090b;
         border: 2px solid #52525b;
         border-radius: 8px;
-        padding: 10px 14px;
+        padding: 12px 14px;
         font-family: 'Courier New', monospace;
-        font-size: 1.08rem;
+        font-size: 1.1rem;
         font-weight: 700;
         color: #ffffff;
-        margin-bottom: 10px;
+        margin-bottom: 12px;
+        line-height: 1.8;
     }
-    .gn-find-box {
-        background-color: #0c1e3d;
-        border: 2.5px solid #38bdf8;
-        border-radius: 8px;
-        padding: 10px 14px;
-        font-family: 'Courier New', monospace;
-        font-size: 1.05rem;
+    .known-badge {
+        display: inline-block;
+        background-color: #14080c;
+        border: 1.5px solid #f43f5e;
+        border-radius: 6px;
+        padding: 2px 9px;
+        margin: 3px 6px 3px 0;
+    }
+    .known-var {
+        color: #ff4d6d;
+        font-weight: 800;
+        text-shadow: 0 0 8px rgba(255, 77, 109, 0.35);
+    }
+    .known-val {
+        color: #ffffff;
         font-weight: 700;
-        color: #e0f2fe;
+    }
+    
+    /* High-Contrast Bright Neon Green Find Box */
+    .gn-find-box {
+        background: linear-gradient(180deg, #021a0e 0%, #010f08 100%);
+        border: 3px solid #22c55e;
+        border-radius: 8px;
+        padding: 12px 16px;
+        font-family: 'Courier New', monospace;
+        font-size: 1.14rem;
+        font-weight: 800;
+        color: #4ade80;
         margin-bottom: 14px;
+        box-shadow: 0 0 18px rgba(34, 197, 94, 0.25);
     }
     
     /* GoodNotes Formula Strip */
@@ -115,17 +136,20 @@ st.markdown("""
         font-weight: 600;
     }
     
-    /* GoodNotes Bottom Grey Explanation Box */
+    /* Full-Width GoodNotes Bottom Grey Explanation Box */
     .gn-grey-box {
-        background-color: #1e293b;
-        border: 2.5px solid #94a3b8;
-        border-radius: 8px;
-        padding: 14px 16px;
-        color: #f8fafc;
-        font-size: 1.02rem;
-        line-height: 1.5;
-        font-weight: 500;
-        margin-top: 8px;
+        background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+        border: 3px solid #cbd5e1;
+        border-radius: 10px;
+        padding: 18px 22px;
+        color: #ffffff;
+        font-family: 'Courier New', monospace;
+        font-size: 1.12rem;
+        line-height: 1.6;
+        font-weight: 700;
+        margin-top: 10px;
+        width: 100%;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.5);
     }
     
     /* Exam Trap Radar Alert */
@@ -207,6 +231,18 @@ def solve_dispersion_relation(h: float, T: float, g: float = 9.81, method: str =
     Cg = n * C
     return {"L0": L0, "C0": C0, "Cg0": Cg0, "L": L, "C": C, "k": k, "kh": kh, "n": n, "Cg": Cg, "sigma": sigma}
 
+def format_knowns_html(knowns_str: str) -> str:
+    import re
+    segments = [s.strip() for s in re.split(r'\s{2,}', knowns_str) if s.strip()]
+    out = []
+    for seg in segments:
+        if "=" in seg:
+            lhs, rhs = seg.split("=", 1)
+            out.append(f'<span class="known-badge"><span class="known-var">{lhs.strip()}</span> = <span class="known-val">{rhs.strip()}</span></span>')
+        else:
+            out.append(f'<span class="known-badge"><span class="known-val">{seg}</span></span>')
+    return "".join(out)
+
 def render_goodnotes_terminal(knowns_str: str, find_str: str, formulas: list, ovals: list, finals: list, explanation: str, traps: list = None):
     if traps:
         for title, body in traps:
@@ -214,9 +250,9 @@ def render_goodnotes_terminal(knowns_str: str, find_str: str, formulas: list, ov
 
     col_left, col_right = st.columns([5, 7])
     with col_left:
-        st.markdown("#### 1. GoodNotes Top Line & Blue 'Find' Box")
-        st.markdown(f'<div class="gn-knowns-box">{knowns_str}</div>', unsafe_allow_html=True)
-        st.markdown(f'<div class="gn-find-box"><span style="color:#38bdf8;">Find:</span> {find_str}</div>', unsafe_allow_html=True)
+        st.markdown("#### 1. GoodNotes Top Line & Bright Green 'Find' Box")
+        st.markdown(f'<div class="gn-knowns-box">{format_knowns_html(knowns_str)}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="gn-find-box"><span style="color:#86efac;text-transform:uppercase;">🎯 Find:</span> {find_str}</div>', unsafe_allow_html=True)
         st.markdown("#### 2. Governing Equations to Write")
         for eq in formulas:
             st.markdown(f'<div class="gn-formula-item">{eq}</div>', unsafe_allow_html=True)
@@ -243,18 +279,20 @@ def render_goodnotes_terminal(knowns_str: str, find_str: str, formulas: list, ov
                     unsafe_allow_html=True,
                 )
 
-        st.markdown("#### 5. GoodNotes Bottom Grey Explanation Box")
-        st.markdown(f'<div class="gn-grey-box">{explanation}</div>', unsafe_allow_html=True)
-        st.code(explanation, language=None)
+    # FULL-WIDTH SECTION 5 (STARTS ALL THE WAY ON THE LEFT & TAKES UP THE WHOLE PAGE)
+    st.markdown("#### 5. GoodNotes Bottom Grey Explanation Box (Full-Page Width)")
+    st.markdown(f'<div class="gn-grey-box">{explanation}</div>', unsafe_allow_html=True)
+    st.code(explanation, language=None)
 
 # ==========================================
 # 3. SIDEBAR NAVIGATION & GLOBAL CONSTANTS
 # ==========================================
 with st.sidebar:
-    st.title("🌊 EGN 330 Engine v3.0")
+    st.title("🌊 EGN 330 Engine v4.0")
     selected_module = st.radio(
         "Select Exam Module:",
         (
+            "🔥 M14: Wave Set-Up & Set-Down",
             "🔥 M12: Wave Breaking & Run-Up",
             "🔥 M13: Wave Radiation Stress",
             "M07: Wave Energy & Power",
@@ -271,9 +309,142 @@ with st.sidebar:
     solver_method = st.selectbox("Dispersion Solver:", ("Beji (2013) [Dr. Wei Key]", "Exact Newton-Raphson", "Handwritten (L0 = 1.56*T^2)"))
 
 # ==========================================
-# 4. MODULE 12: WAVE BREAKING & RUN-UP
+# 4. MODULE 14: WAVE SET-UP & SET-DOWN
 # ==========================================
-if selected_module == "🔥 M12: Wave Breaking & Run-Up":
+if selected_module == "🔥 M14: Wave Set-Up & Set-Down":
+    st.markdown('<div class="main-title">Module 14: Wave Set-Up & Wave Set-Down</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sub-title">Shoaling Wave Set-Down (η̄), Komar & Gaughan (1973) + Weggel (1972) Breaking Depth (h_b), and Surf-Zone Linear Wave Set-Up Function η̄(h)</div>', unsafe_allow_html=True)
+
+    m14_mode = st.radio(
+        "Select Problem Type:",
+        (
+            "Local Wave Set-Down at Depth h (L14-P1, L14-Ex1)",
+            "Breaking (H_b, h_b, x_b) + Set-Down at Breaking + Linear Wave Set-Up Function (L14-P2, L14-Ex2)",
+        ),
+        horizontal=True,
+    )
+
+    if m14_mode.startswith("Local Wave Set-Down"):
+        c1, c2, c3 = st.columns(3)
+        H_in = c1.number_input("Wave Height H [m]", value=1.5, step=0.5)
+        T_in = c2.number_input("Wave Period T [s]", value=6.0, step=0.5)
+        h_in = c3.number_input("Water Depth h [m]", value=8.0, step=0.5)
+
+        d = solve_dispersion_relation(h_in, T_in, g_in, solver_method)
+        sinh_2kh = np.sinh(2.0 * d["kh"])
+        eta_down = - (1.0 / 8.0) * (H_in ** 2) * d["k"] / sinh_2kh
+        eta_down_cm = eta_down * 100.0
+        eta_shallow = - (1.0 / 16.0) * (H_in ** 2) / h_in
+
+        traps = [
+            ("M14 Trap #1 — Negative Sign & Units (m vs. cm)", f"Wave set-down is ALWAYS negative (η̄ < 0) because ∂S_xx/∂x > 0 lowers the mean water level before breaking. Note both meters ({eta_down:.4f} m) and centimeters ({eta_down_cm:.2f} cm)!"),
+            ("M14 Trap #2 — Independent of Bottom Slope", "Before breaking, wave set-down η̄ = -(1/8)(H²k)/sinh(2kh) depends strictly on local depth h, wave height H, and wavenumber k."),
+        ]
+        ovals = [
+            ("Deep Wavelength", "L₀", f"{d['L0']:.3f}", "m"),
+            ("Local Wavelength", "L", f"{d['L']:.3f}", "m"),
+            ("Wavenumber", "k", f"{d['k']:.4f}", "rad/m"),
+            ("Dimensionless 2kh", "2kh", f"{2*d['kh']:.4f}", "-"),
+            ("Hyperbolic Denom", "sinh(2kh)", f"{sinh_2kh:.4f}", "-"),
+        ]
+        finals = [
+            ("Wave Set-Down (Meters)", "η̄", f"{eta_down:.4f}", "m", f"3-dec: {eta_down:.3f} m | Shallow approx: {eta_shallow:.4f} m"),
+            ("Wave Set-Down (Centimeters)", "η̄", f"{eta_down_cm:.2f}", "cm", f"Mean water level drops {abs(eta_down_cm):.2f} cm below SWL"),
+        ]
+        explanation = (
+            f"At water depth h = {h_in} m (where L = {d['L']:.3f} m and k = {d['k']:.4f} rad/m), the wave set-down is "
+            f"η̄ = {eta_down:.4f} m (or {eta_down_cm:.2f} cm). The minus sign indicates that wave shoaling increases radiation stress "
+            f"S_xx toward shore (∂S_xx/∂x > 0), lowering the mean water level below the still water level (SWL)."
+        )
+        render_goodnotes_terminal(
+            f"H = {H_in} m   T = {T_in} s   h = {h_in} m   g = {g_in} m/s²",
+            "Local wavelength L, wavenumber k, and wave set-down η̄ at this location",
+            [
+                "L₀ = (gT²)/(2π),   L = L₀ tanh(2πh/L),   k = 2π/L",
+                "dS_xx/dx + ρg(h + η̄)(dη̄/dx) = 0   ⇒   dη̄/dx = -(1 / ρgh)(dS_xx / dx)",
+                "η̄ = - (1 / 8) · (H² · k) / sinh(2kh)",
+            ],
+            ovals,
+            finals,
+            explanation,
+            traps,
+        )
+    else:
+        c1, c2, c3, c4 = st.columns(4)
+        T_in = c1.number_input("Wave Period T [s]", value=15.0, step=0.5)
+        H0_in = c2.number_input("Deep-Water Height H₀ [m]", value=1.5, step=0.5)
+        slope_raw = c3.text_input("Beach Slope tan(β) (e.g. 1/20, 1/50, 0.05)", value="1/20")
+        gamma_in = c4.number_input("Surf-Zone Breaker Index γ [-]", value=0.78, step=0.02)
+
+        s_clean = slope_raw.strip().replace(":", "/")
+        tan_beta = float(eval(s_clean))
+
+        d0 = solve_dispersion_relation(None, T_in, g_in, solver_method)
+        L0 = d0["L0"]
+        omega_b = 0.56 * ((H0_in / L0) ** (-0.2))
+        Hb = omega_b * H0_in
+        Hb_2d = round(Hb, 2)
+
+        a_weg = 43.8 * (1.0 - np.exp(-19.0 * tan_beta))
+        b_weg = 1.56 / (1.0 + np.exp(-19.5 * tan_beta))
+        gamma_b_weg = b_weg - a_weg * (Hb / (g_in * (T_in ** 2)))
+        hb = Hb / gamma_b_weg
+        hb_2d = round(hb, 2)
+        xb = hb / tan_beta
+
+        eta_b = - (1.0 / 16.0) * (Hb ** 2) / hb
+        eta_b_key = - (1.0 / 16.0) * (Hb_2d ** 2) / hb_2d
+        eta_b_2d = round(eta_b_key, 2)
+
+        term_g = (3.0 / 8.0) * (gamma_in ** 2)
+        K = term_g / (1.0 + term_g)
+        K_2d = round(K, 2)
+        eta_shore_max = eta_b_2d + K_2d * hb_2d
+
+        traps = [
+            ("M14 Trap #3 — Komar & Gaughan (1973) + Weggel (1972) for Breaking Point", f"Use Komar & Gaughan (1973) to find H_b = {Hb_2d:.2f} m and Weggel (1972) (γ_b = {gamma_b_weg:.3f}) to find h_b = {hb_2d:.2f} m. Do NOT use the surf-zone γ = {gamma_in} to find h_b!"),
+            ("M14 Trap #4 — Surf-Zone Linear Set-Up Function", f"Use γ = {gamma_in} to compute K = (3/8 γ²)/(1 + 3/8 γ²) = {K_2d:.2f} ({K:.3f}), then write η̄(h) = η̄_b + K(h_b - h)."),
+        ]
+        ovals = [
+            ("Deep Wavelength", "L₀", f"{L0:.3f}", "m"),
+            ("Komar Index", "Ω_b", f"{omega_b:.3f}", "-"),
+            ("Weggel Coeff a", "a", f"{a_weg:.3f}", "-"),
+            ("Weggel Coeff b", "b", f"{b_weg:.3f}", "-"),
+            ("Weggel γ_b", "γ_b", f"{gamma_b_weg:.3f}", "-"),
+            ("Slope Factor K", "K", f"{K:.3f}", f"({K_2d:.2f})"),
+        ]
+        finals = [
+            ("a1) Incipient Breaking Height", "H_b", f"{Hb_2d:.2f}", "m", f"Exact 3-dec: {Hb:.3f} m (Komar & Gaughan 1973)"),
+            ("a2) Breaking Depth & Distance", "h_b", f"{hb_2d:.2f}", "m", f"Exact h_b = {hb:.3f} m (Weggel 1972) | x_b = {xb:.2f} m"),
+            ("b) Wave Set-Down at Breaking", "η̄_b", f"{eta_b_2d:.2f}", "m", f"Exact 3-dec: {eta_b:.3f} m  [-(1/16)H_b²/h_b]"),
+            ("c) Linear Wave Set-Up Function", "η̄(h)", f"{eta_b_2d:.2f} + {K_2d:.2f}*({hb_2d:.2f} - h)", "m", f"K = {K_2d:.2f} ({K:.3f}) | Shoreline (h=0) η̄_max = +{eta_shore_max:.3f} m"),
+        ]
+        explanation = (
+            f"a) Using Komar & Gaughan (1973), the incipient breaking wave height is H_b = {Hb_2d:.2f} m ({Hb:.3f} m). "
+            f"Using Weggel (1972) with a = {a_weg:.3f}, b = {b_weg:.3f}, and γ_b = {gamma_b_weg:.3f}, the breaking water depth is "
+            f"h_b = {hb_2d:.2f} m ({hb:.3f} m) at offshore distance x_b = h_b/tan(β) = {xb:.2f} m.  "
+            f"b) Wave set-down at the breaking location is η̄_b = -(1/16)(H_b²/h_b) = {eta_b_2d:.2f} m ({eta_b:.3f} m).  "
+            f"c) With surf-zone breaker index γ = {gamma_in}, factor K = (3/8 γ²)/(1 + 3/8 γ²) = {K_2d:.2f} ({K:.3f}), giving the linear wave set-up function: "
+            f"η̄ = {eta_b_2d:.2f} + {K_2d:.2f}*({hb_2d:.2f} - h)."
+        )
+        render_goodnotes_terminal(
+            f"T = {T_in} s   H₀ = {H0_in} m   tan(β) = {slope_raw} ({tan_beta:.4f})   γ = {gamma_in}   g = {g_in} m/s²",
+            "a) H_b, h_b, and x_b at breaking;  b) Wave set-down η̄_b at breaking;  c) Factor K and linear wave set-up function η̄(h)",
+            [
+                "H_b = 0.56 · H₀ · (H₀ / L₀)^(-1/5)   [Komar & Gaughan, 1973]",
+                "γ_b = b - a·[H_b / (gT²)],   a = 43.8(1 - e^(-19 tan β)),   b = 1.56 / (1 + e^(-19.5 tan β)),   h_b = H_b / γ_b   [Weggel, 1972]",
+                "η̄_b = - (1 / 16) · (H_b² / h_b),   K = (3/8 γ²) / (1 + 3/8 γ²),   η̄(h) = η̄_b + K · (h_b - h)",
+            ],
+            ovals,
+            finals,
+            explanation,
+            traps,
+        )
+
+# ==========================================
+# 5. MODULE 12: WAVE BREAKING & RUN-UP
+# ==========================================
+elif selected_module == "🔥 M12: Wave Breaking & Run-Up":
     st.markdown('<div class="main-title">Module 12: Wave Breaking & Wave Run-Up</div>', unsafe_allow_html=True)
     st.markdown('<div class="sub-title">Iribarren Parameter (ξ₀), Breaker Classification, Goda (2010), Komar & Gaughan (1973), and Stockdon (2006) 2% Run-Up</div>', unsafe_allow_html=True)
 
@@ -293,7 +464,7 @@ if selected_module == "🔥 M12: Wave Breaking & Run-Up":
     parts = [p.strip() for p in slope_raw.split(",") if p.strip()]
     slope_items = []
     for p in parts:
-        val = float(eval(p))
+        val = float(eval(p.replace(":", "/")))
         is_deg = slope_mode.startswith("Degrees")
         s_val = np.tan(np.radians(val)) if is_deg else val
         xi0 = s_val / sqrt_steep0
@@ -305,7 +476,6 @@ if selected_module == "🔥 M12: Wave Breaking & Run-Up":
     s_primary = slope_items[0][3] if slope_items else 0.04
     xi_primary = slope_items[0][4] if slope_items else 0.26
 
-    # Goda (2010), Kamphuis (1991), Simple (0.78), Komar & Gaughan (1973), Stockdon (2006)
     hb_L0 = hb_in / L0
     slope_factor = 1.0 + 11.0 * (s_primary ** (4.0 / 3.0))
     gamma_goda = (0.17 / hb_L0) * (1.0 - np.exp(-1.5 * np.pi * hb_L0 * slope_factor))
@@ -372,7 +542,7 @@ if selected_module == "🔥 M12: Wave Breaking & Run-Up":
     )
 
 # ==========================================
-# 5. MODULE 13: WAVE RADIATION STRESS
+# 6. MODULE 13: WAVE RADIATION STRESS
 # ==========================================
 elif selected_module == "🔥 M13: Wave Radiation Stress":
     st.markdown('<div class="main-title">Module 13: Wave Radiation Stress</div>', unsafe_allow_html=True)
@@ -439,7 +609,7 @@ elif selected_module == "🔥 M13: Wave Radiation Stress":
             f"the group velocity factor (n: {d1['n']:.3f} → {d2['n']:.3f}). Shear components remain {Sxy2:.3f} kg/s²."
         )
         render_goodnotes_terminal(
-            f"H₁ = {H1} m   T = {T} s   h₁ = {h1} m → h₂ = {h2} m   θ = {theta_deg}°   ρ = {rho_in} kg/m³   g = {g_in} m/s²",
+            f"H₁ = {H1} m   T = {T} s   h₁ = {h1} m   h₂ = {h2} m   θ = {theta_deg}°   ρ = {rho_in} kg/m³   g = {g_in} m/s²",
             "Offshore and Nearshore Radiation Stress Components (S_xx, S_yy, S_xy, S_yx) and Shoaling Comparison",
             [
                 "K_s = √(Cg₁ / Cg₂),   H₂ = H₁ · K_s",
@@ -494,7 +664,7 @@ elif selected_module == "🔥 M13: Wave Radiation Stress":
             explanation = f"At oblique angle θ = {theta_deg}°, S_xx = {Sxx:.3f} kg/s², S_yy = {Syy:.3f} kg/s², and oblique momentum transfer produces nonzero shear stresses S_xy = S_yx = {Sxy:.4f} kg/s²."
 
         render_goodnotes_terminal(
-            f"H = {H} m   T = {T} s   {'Deep Water (n=0.5)' if is_deep else f'h = {h} m'}   θ = {theta_deg}°   ρ = {rho_in} kg/m³   g = {g_in} m/s²",
+            f"H = {H} m   T = {T} s   {'n = 0.5 (Deep)' if is_deep else f'h = {h} m'}   θ = {theta_deg}°   ρ = {rho_in} kg/m³   g = {g_in} m/s²",
             "Wavelength L, wavenumber k, wave energy E, group velocity factor n, and radiation stresses S_xx, S_yy, S_xy, S_yx",
             [
                 "L₀ = (gT²)/(2π),   L = L₀ tanh(2πh/L),   k = 2π/L",
@@ -508,7 +678,7 @@ elif selected_module == "🔥 M13: Wave Radiation Stress":
         )
 
 # ==========================================
-# 6. MODULES M07 – M11 (WITH STEP = 0.5 & GOODNOTES UI)
+# 7. MODULES M07 – M11 (WITH STEP = 0.5 & GOODNOTES UI)
 # ==========================================
 elif selected_module == "M07: Wave Energy & Power":
     st.markdown('<div class="main-title">Module 07: Wave Energy & Power Flux</div>', unsafe_allow_html=True)
