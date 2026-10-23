@@ -1,6 +1,6 @@
 """
-EGN 330: Coastal Wave Mechanics — Master Computational Engine (v4.0)
-Fully Merged Implementation: Modules M07 through M14 (Exam-Compliant High-Contrast GoodNotes UI)
+EGN 330: Coastal Wave Mechanics — Master Computational Engine (v5.0)
+Fully Merged Implementation: Modules M07 through M16 + Open-Ended Exam Q&A Synthesizer (Exam-Compliant High-Contrast GoodNotes UI)
 Dr. Zhangping (John) Wei, UNCW
 """
 import math
@@ -12,7 +12,7 @@ from scipy.optimize import root_scalar
 # 1. PAGE CONFIGURATION & HIGH-CONTRAST STYLING
 # ==========================================
 st.set_page_config(
-    page_title="EGN 330: Master Engine v4.0 (M07–M14)",
+    page_title="EGN 330: Master Engine v5.0 (M07–M16 + Q&A)",
     page_icon="🌊",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -288,10 +288,13 @@ def render_goodnotes_terminal(knowns_str: str, find_str: str, formulas: list, ov
 # 3. SIDEBAR NAVIGATION & GLOBAL CONSTANTS
 # ==========================================
 with st.sidebar:
-    st.title("🌊 EGN 330 Engine v4.0")
+    st.title("🌊 EGN 330 Engine v5.0")
     selected_module = st.radio(
         "Select Exam Module:",
         (
+            "🔥 M15: Nonlinear Wave Theories",
+            "🔥 M16: Solitary Waves & Tsunamis",
+            "🧠 Open-Ended Exam Q&A Synthesizer",
             "🔥 M14: Wave Set-Up & Set-Down",
             "🔥 M12: Wave Breaking & Run-Up",
             "🔥 M13: Wave Radiation Stress",
@@ -309,9 +312,539 @@ with st.sidebar:
     solver_method = st.selectbox("Dispersion Solver:", ("Beji (2013) [Dr. Wei Key]", "Exact Newton-Raphson", "Handwritten (L0 = 1.56*T^2)"))
 
 # ==========================================
-# 4. MODULE 14: WAVE SET-UP & SET-DOWN
+# 3B. LE MÉHAUTÉ CLASSIFIER & OPEN-ENDED Q&A BANK
 # ==========================================
-if selected_module == "🔥 M14: Wave Set-Up & Set-Down":
+def classify_le_mehaute(h: float, T: float, H: float, g: float, L: float, L0: float):
+    dim_H = H / (g * (T ** 2))
+    dim_h = h / (g * (T ** 2))
+    Ur = (H * (L ** 2)) / (h ** 3)
+    H_over_h = H / h
+    H_over_L0 = H / L0
+
+    if H_over_h >= 0.78 or H_over_L0 >= 0.142:
+        return (
+            "Breaking Wave Regime (Exceeds Le Méhauté Stability Limit)",
+            f"Wave exceeds breaking stability limit (H/h = {H_over_h:.3f}, H/L₀ = {H_over_L0:.3f}).",
+        )
+    if Ur >= 26.0 or dim_h < 0.005:
+        if H_over_h > 0.4:
+            return (
+                "Solitary Wave Theory / 5th-Order Stream Function Theory",
+                f"Large Ursell number (U_r = {Ur:.2f} ≥ 26) indicates strong shallow-water nonlinearity.",
+            )
+        return (
+            "Cnoidal Wave Theory",
+            f"Large Ursell number (U_r = {Ur:.2f} ≥ 26) indicates strong shallow-water nonlinearity, consistent with selecting Cnoidal wave theory.",
+        )
+    if dim_H <= 0.0008 and Ur < 5.0:
+        return (
+            "Linear (Small-Amplitude) Wave Theory",
+            f"Very small Ursell number (U_r = {Ur:.2f}) and small dimensionless wave height (H/gT² = {dim_H:.5f}) indicate negligible nonlinearity, consistent with Linear Wave Theory.",
+        )
+    if dim_h >= 0.02:
+        if dim_H <= 0.0055:
+            return (
+                "Stokes 2nd-Order Wave Theory",
+                f"The Ursell number (U_r = {Ur:.2f}) is small, indicating weak shallow-water nonlinearity. It is consistent with selecting a Stokes-type theory.",
+            )
+        elif dim_H <= 0.011:
+            return (
+                "Stokes 3rd-Order Wave Theory",
+                f"The Ursell number (U_r = {Ur:.2f}) is small while wave steepness is moderate-to-high, consistent with a higher-order Stokes wave theory.",
+            )
+        else:
+            return (
+                "Stokes 4th-Order / 5th-Order Stream Function Theory",
+                f"High dimensionless wave height (H/gT² = {dim_H:.4f}) requires Stokes 4th-order or 5th-order Stream Function theory.",
+            )
+    else:
+        if Ur >= 15.0:
+            return (
+                "Stokes 3rd/4th-Order or Stream Function (Near Cnoidal Boundary U_r ≈ 26)",
+                f"The Ursell number (U_r = {Ur:.2f}) approaches the transition range (U_r ≈ 20–26) between Stokes-type and Cnoidal-type waves.",
+            )
+        return (
+            "Stokes 2nd-Order Wave Theory",
+            f"The Ursell number (U_r = {Ur:.2f}) is below the 20–26 transition, consistent with selecting a Stokes-type wave theory.",
+        )
+
+
+EGN330_QA_BANK = [
+    {
+        "mod": "M15",
+        "title": "Limitations of Linear Wave Theory & Linearization Assumptions (M15 Slides 4–7)",
+        "keywords": "limitations linear wave theory small amplitude linearization free surface boundary condition kfsbc dfsbc z=0 h/l h/h laplace",
+        "question": "What are the limitations of linear (small-amplitude) wave theory, and how was linearization carried out?",
+        "answer": "Linear (small-amplitude) wave theory solves the Laplace equation (∇²φ = 0) across the full range of relative water depth (h/L), but it is strictly limited to waves with very small amplitude relative to both water depth (H/h ≪ 1 for shallow water) and wavelength (H/L ≪ 1 for deep water). During linearization, nonlinear velocity-squared terms ½[(∂φ/∂x)² + (∂φ/∂z)²] and product terms (∂φ/∂x)(∂η/∂x) are dropped, and the Kinematic and Dynamic Free Surface Boundary Conditions (KFSBC and DFSBC) are applied at the still water level (z = 0) rather than at the actual moving water surface (z = η).",
+        "equations": "∇²φ = 0,   H/h ≪ 1,   H/L ≪ 1,   BCs applied at z = 0 instead of z = η(x,t)",
+        "trap": "Linear theory works across ALL relative depths (h/L from deep to shallow), as long as wave height H is small compared to h and L!",
+    },
+    {
+        "mod": "M15",
+        "title": "When Do Nonlinear Wave Effects Matter? (M15 Slide 9)",
+        "keywords": "when nonlinear effects matter steepness 0.05 relative depth 0.5 bathymetry wave forces structures",
+        "question": "When do nonlinear wave effects matter in coastal engineering?",
+        "answer": "Nonlinear wave effects matter when: (1) Wave steepness (H/L) exceeds approximately 0.05; (2) Relative water depth (h/L) is less than 0.5 (intermediate to shallow water); (3) Waves propagate over varying bathymetry; (4) Wave amplitudes are large relative to local water depth (finite H/h); and (5) Accurate prediction of wave forces on coastal or offshore structures is required.",
+        "equations": "H/L > 0.05,   h/L < 0.5,   Finite H/h",
+        "trap": "List at least 4 of Dr. Wei's exact 5 bullet points from Slide 9 for full credit.",
+    },
+    {
+        "mod": "M15",
+        "title": "Ursell Number Definition & Physical Interpretation (M15 Slides 10–11 & L15-P2)",
+        "keywords": "ursell number ur quantify nonlinearity transition 20 26 stokes cnoidal l15-p2 consistent",
+        "question": "How is the Ursell number defined, and how is it used to interpret wave nonlinearity and select wave theories?",
+        "answer": "The Ursell number quantifies the degree of shallow-water nonlinearity and is defined as wave steepness divided by relative depth cubed: U_r = (H/L) / (h/L)³ = (H · L²) / h³. A small Ursell number (U_r ≪ 20–26) indicates weak shallow-water nonlinearity, corresponding to linear or Stokes-type waves (where nonlinearity is governed by wave steepness H/L in deep or intermediate water). A large Ursell number (U_r > 26) indicates strong shallow-water nonlinearity, corresponding to cnoidal or solitary wave theories. The range U_r ≈ 20–26 represents an approximate transition rather than a strict boundary.",
+        "equations": "U_r = (H / L) / (h / L)³ = (H · L²) / h³   (Transition: U_r ≈ 20–26)",
+        "trap": "In L15-P2(d), state explicitly: 'The Ursell number is small, indicating weak shallow-water nonlinearity. It is consistent with selecting a Stokes-type theory.'",
+    },
+    {
+        "mod": "M15",
+        "title": "Two Approaches to Developing Nonlinear (Finite-Amplitude) Wave Theories (M15 Slides 12–13)",
+        "keywords": "two approaches finite amplitude nonlinear wave theories analytical perturbation numerical stream function stokes cnoidal",
+        "question": "What are the two approaches used to develop finite-amplitude (nonlinear) wave theories, and which theories belong to each?",
+        "answer": "Finite-amplitude wave theories relax the requirement that either H/h or H/L be small, and are formulated in two ways: (1) Analytical Approach: Analytically solving the velocity potential (φ) boundary value problem using successive approximations or perturbation power-series techniques — examples include Stokes Wave Theory (power series in wave steepness H/L, applicable in deep and intermediate water where H/h is small) and Cnoidal Wave Theory (Korteweg & de Vries 1895 KdV equations using Jacobi elliptic 'cn' functions, applicable in shallow water with finite H/h). (2) Numerical Approach: Solving the Laplace equation and nonlinear boundary conditions numerically — specifically Dean's (1965) Stream Function Wave Theory (using stream function ψ related to φ via the Cauchy-Riemann equations).",
+        "equations": "Analytical: Stokes (H/L series) & Cnoidal (KdV 'cn');   Numerical: Stream Function ψ (Dean 1965)",
+        "trap": "Also remember Slide 2: 'Linear wave theory is also called small-amplitude wave theory; Nonlinear wave theory is also called finite-amplitude wave theory.'",
+    },
+    {
+        "mod": "M15",
+        "title": "Stokes 2nd-Order Dispersion Relation & Surface Profile Asymmetry (M15 Slides 15–17)",
+        "keywords": "stokes second order dispersion relation surface profile crest trough reinforce oppose vertical asymmetry flatter steeper",
+        "question": "How does the Stokes 2nd-order surface profile differ from linear wave theory, and does its dispersion relation change?",
+        "answer": "For Stokes second-order wave theory, the dispersion relation (σ² = gk tanh kh) is identical to linear wave theory (a nonlinear dispersion correction only appears at third order and above). However, the Stokes 2nd-order surface profile adds a second-harmonic correction term proportional to wave steepness (H/L) with twice the frequency cos 2(kx - σt). The first-order and second-order components reinforce each other (are in phase) at the wave crest and oppose each other at the wave trough. This produces vertical asymmetry: wave crests are steeper and more peaked (higher above SWL), while wave troughs are flatter and shallower than a linear cosine wave.",
+        "equations": "η = (H/2)cos(kx - σt) + (πH/8)(H/L)[cosh(kh)/sinh³(kh)](2 + cosh 2kh)cos 2(kx - σt)",
+        "trap": "At zero-crossings x = L/4 and 3L/4 (at t=0), cos(kx)=0 so linear η = 0, but cos(2kx) = cos(π) = -1, so Stokes 2nd-order η is NEGATIVE (-A₂)!",
+    },
+    {
+        "mod": "M15",
+        "title": "Cnoidal Wave Theory Limits & Stream Function Cauchy-Riemann Equations (M15 Slides 22–25)",
+        "keywords": "cnoidal wave theory kdv korteweg de vries jacobi elliptic cn limits deep shallow solitary stream function cauchy riemann",
+        "question": "What are the deep-water and shallow-water limits of Cnoidal wave theory, and how is Stream Function theory formulated?",
+        "answer": "Cnoidal wave theory (Korteweg & de Vries, 1895, or KdV theory) expresses the wave profile using the Jacobi elliptic function 'cn'. Its deep-water limit is small-amplitude (linear) wave theory, and its shallow-water limit (as wavelength L → ∞) is solitary wave theory. Stream function wave theory (Dean, 1965) solves fully nonlinear water waves numerically using the stream function (ψ), which is related to velocity potential (φ) by the Cauchy-Riemann equations: u = -∂φ/∂x = -∂ψ/∂z and w = -∂φ/∂z = ∂ψ/∂x.",
+        "equations": "Cnoidal limits: Linear (deep) ↔ Solitary (shallow);   Cauchy-Riemann: u = -∂φ/∂x = -∂ψ/∂z,  w = -∂φ/∂z = ∂ψ/∂x",
+        "trap": "'Cnoidal' comes from the Jacobi elliptic function notation 'cn' used by Korteweg & de Vries (1895).",
+    },
+    {
+        "mod": "M16",
+        "title": "What is a Solitary Wave? (Oscillatory vs. Translatory) (M16 Slides 3–6)",
+        "keywords": "what is solitary wave crest above swl no trough translatory oscillatory infinite wavelength period sech",
+        "question": "What is a solitary wave, and why is it classified as a translatory wave rather than an oscillatory wave?",
+        "answer": "A solitary wave is a nonlinear finite-amplitude shallow-water wave whose profile consists of a single crest lying completely above the still water level (SWL) with no wave trough (η ≥ 0 everywhere). Unlike linear periodic waves (which are oscillatory because water particles move in closed orbits), a solitary wave is a translatory wave: as the wave passes, water particles move forward in the direction of wave propagation and then come to rest without returning to complete an orbit. Theoretically, a solitary wave has an infinite wavelength (L → ∞) and an infinite wave period (T → ∞).",
+        "equations": "η(x,t) = H · sech²[√(3H / 4h³) · (x - Ct)],   C = √(g(h + H)),   sech(x) = 1/cosh(x) = 2/(e^x + e^-x)",
+        "trap": "Solitary wave speed C = √(g(h + H)) increases with wave height H, making it faster than linear shallow-water wave speed C = √(gh).",
+    },
+    {
+        "mod": "M16",
+        "title": "Solitary Wave Displaced Volume, Energy & SI Units (M16 Slides 9–10 & L16-P1)",
+        "keywords": "solitary wave displaced volume total energy per unit crest width si units gamma h/h",
+        "question": "How are the displaced water volume and total energy per unit crest width calculated for a solitary wave, and what are their SI units?",
+        "answer": "For a solitary wave of height H in water depth h, the displaced volume of water per unit crest width above SWL is V = (16/3 · h³ · H)^(1/2), which has SI units of m² (m³ of volume per m of crest width). The total wave energy per unit crest width is evenly divided between kinetic energy (KE) and potential energy (PE) and is given by E = (8/3) · ρ · g · h³ · γ · √(γ / 3), where γ = H / h is the relative wave height. The SI unit of solitary wave total energy per unit crest width E is kg·m/s² (or J/m = N).",
+        "equations": "V = √(16/3 · h³ · H) [m²],   E = (8/3)ρgh³γ√(γ/3) [kg·m/s² or J/m],   γ = H/h",
+        "trap": "Unit Trap on Slide 9: Solitary wave energy E is per unit crest width (integrated along x), so its unit is kg·m/s² (J/m), whereas linear wave energy density E (M07) is per unit horizontal area [kg/s² or J/m²]!",
+    },
+    {
+        "mod": "M16",
+        "title": "What is a Tsunami & Why Never Say 'Tsunami Wave'? (M16 Slides 11–17)",
+        "keywords": "what is tsunami japanese harbor wave never say tsunami wave causes earthquake 88% magnitude 8.0 landslide subaerial submarine ring of fire 78%",
+        "question": "What does the word 'tsunami' mean, what causes tsunamis, how do earthquakes and landslides generate them, and where do they occur?",
+        "answer": "(1) Meaning: 'Tsunami' comes from the Japanese characters for harbor ('tsu') and wave ('nami'), meaning 'harbor wave.' Do not use the term 'tsunami wave' because 'tsunami' already means wave. (2) Causes: Tsunamis are caused by large, sudden displacements of the ocean due to underwater earthquakes (most common), landslides, volcanic activity, weather, or near-earth objects; 88% of historical tsunamis in the NOAA database were generated by earthquakes or earthquake-triggered landslides. (3) Earthquake mechanism: At a tectonic subduction zone, a stuck overriding plate bulges under strain (tectonic uplift) and suddenly ruptures/slips, causing subsidence and releasing energy into the water column; generally, an earthquake must exceed Magnitude 8.0 to generate a dangerous distant tsunami. (4) Landslide mechanisms (2 ways): Subaerial (a landslide enters water from above) or Submarine (water is displaced ahead of and behind an underwater landslide). (5) Global distribution (1900–2015): 78% Pacific Ocean ('Ring of Fire'), 8% Atlantic & Caribbean, 6% Mediterranean, 5% Indian Ocean, 1% other seas.",
+        "equations": "88% Earthquake/Landslide-driven | Earthquake M > 8.0 | Distribution: 78% Pacific, 8% Atlantic/Caribbean, 6% Med, 5% Indian",
+        "trap": "Dr. Wei explicitly states on Slide 11: 'Don't use the term tsunami wave since tsunami has a meaning of wave.'",
+    },
+    {
+        "mod": "M16",
+        "title": "Why is a Tsunami a Shallow-Water Wave in the Deep Ocean & Green's Law (M16 Slide 18 & L16-P2)",
+        "keywords": "tsunami shallow water wave deep ocean 6 km greens law shoaling h1/h2 1/4 assumptions speed wavelength height",
+        "question": "Why does a tsunami behave as a shallow-water wave even in a 6 km deep ocean, and what happens as it shoals into coastal water (Green's Law)?",
+        "answer": "A tsunami behaves as a shallow-water wave even in the deep ocean (e.g., h₁ = 6 km) because its wave period is extremely long (typically 10–60 minutes, such as T = 45 min = 2700 s), producing an enormous wavelength (L₁ = C₁·T ≈ 655 km). Consequently, the relative water depth is h₁/L₁ ≈ 6 / 655 = 0.009 < 0.05 (the shallow-water threshold). Assuming 1D propagation, slowly varying depth, no reflection, and no energy dissipation, conservation of energy flux ([EC_g]₁ = [EC_g]₂ with C_g = C = √(gh)) yields Green's Law: H₂ / H₁ = K_s = (h₁ / h₂)^(1/4). As the tsunami propagates from deep ocean into shallower coastal water, its wave speed C decreases, its wavelength L decreases, and its wave height H increases substantially.",
+        "equations": "h₁/L₁ < 0.05 (Shallow-Water Wave),   C = √(gh) [or √(g(h+H))],   L = C·T,   H₂ = H₁ · (h₁ / h₂)^(1/4) [Green's Law]",
+        "trap": "Include the 4 assumptions of Green's Law from Slide 18: (1) One-dimensional propagation, (2) Slowly varying depth, (3) No reflection, and (4) No energy dissipation.",
+    },
+    {
+        "mod": "M14",
+        "title": "Radiation Stress Gradients & Momentum Balance in Region 1 vs. Region 2 (M14 Slides 7–18)",
+        "keywords": "region 1 region 2 radiation stress gradient dsxx/dx > 0 < 0 momentum balance wave set-down set-up storm surge",
+        "question": "How does radiation stress S_xx change from deep water to the shoreline (Region 1 vs. Region 2), and how does horizontal momentum balance cause wave set-down and wave set-up?",
+        "answer": "The horizontal momentum balance for a stationary 2D water column requires that the cross-shore gradient of radiation stress be balanced by the hydrostatic pressure gradient of the mean water level (MWL): dS_xx/dx + ρg(h + η̄)(dη̄/dx) = 0, or dη̄/dx = -(1 / ρgh)(dS_xx/dx). (1) Region 1 (Shoaling Zone — deep water to the breaking point): As waves shoal without breaking, wave height H, wave energy E, and group factor n all increase, so radiation stress increases toward shore (∂S_xx/∂x > 0). To balance this positive momentum flux gradient, the MWL slope must be negative (dη̄/dx < 0), causing wave set-down (a lowering of mean water level below SWL, η̄ < 0). (2) Region 2 (Surf Zone — breaking point to wave uprush limit): Once waves break, energy dissipates rapidly and H = γh decreases toward shore, so radiation stress decreases (∂S_xx/∂x < 0). To balance this negative gradient, the MWL slope must be positive (dη̄/dx > 0), causing wave set-up (a rise in mean water level above SWL toward the beach).",
+        "equations": "dS_xx/dx + ρg(h + η̄)(dη̄/dx) = 0  ⇒  dη̄/dx = -(1/ρgh)(dS_xx/dx);   Region 1: ∂S_xx/∂x > 0 ⇒ set-down (η̄ < 0);   Region 2: ∂S_xx/∂x < 0 ⇒ set-up (dη̄/dx > 0)",
+        "trap": "Two derivation steps (Slide 17): (1) Establish the force-momentum flux balance for a water column in a stationary situation, and (2) Apply the linear wave assumption and ignore higher-order terms.",
+    },
+    {
+        "mod": "M13",
+        "title": "Definition, Physical Meaning & Derivation of Radiation Stress (M13 Slides 8–19)",
+        "keywords": "radiation stress definition excess flow of momentum longuet-higgins stewart 1964 mass energy momentum derivation",
+        "question": "What is radiation stress, do linear waves transport mass, energy, and momentum, and what are the steps to derive radiation stress?",
+        "answer": "According to linear wave theory, waves do NOT transport mass (because water particles move in closed orbital trajectories), but they DO transport wave energy (via work done by dynamic pressure) and wave momentum (the product of fluid mass density ρ and particle velocity u, yielding momentum flux ρu²). Radiation stress (Longuet-Higgins & Stewart, 1964) is 'the excess flow of momentum due to the presence of waves' beyond hydrostatic still-water pressure. It is derived from linear wave theory by: (1) Integrating the total pressure p and particle momentum flux ρu² over the total water depth (from z = -h to z = η) and averaging over a wave period, and (2) Subtracting the depth-integrated hydrostatic pressure p₀ = -ρgz below the still water level (from z = -h to z = 0).",
+        "equations": "S_xx = Overline[ ∫_{-h}^{η} (p + ρu²) dz ] - ∫_{-h}^{0} p₀ dz,   SI Unit: N/m or kg/s²",
+        "trap": "In Cartesian coordinates, the first subscript letter indicates the momentum component and the second letter indicates the axis on which it is projected.",
+    },
+    {
+        "mod": "M12",
+        "title": "Why Waves Break in Deep Water vs. Shallow Water & Breaker Types (M12 Slides 10–27)",
+        "keywords": "why does wave break deep water shallow water steepness 1/7 crest particle velocity u = c0 shoaling ks infinity depth limited 0.78 spilling plunging surging",
+        "question": "Explain why waves break in deep water versus shallow water, and how breaker types are classified using the Iribarren parameter.",
+        "answer": "Wave breaking is caused by the instability of the wave crest/front, via different mechanisms in deep and shallow water: (1) Deep Water (Steepness-Limited): Phase speed C₀ = gT/(2π) is independent of H, while crest particle velocity u is proportional to H; when H₀/L₀ ≥ 1/7, crest velocity u equals C₀ and the wave breaks. (2) Shallow Water (Depth-Limited): As h → 0, C = C_g = √(gh) decreases and K_s increases toward infinity; breaking is controlled by local water depth when H_b/h_b ≈ 0.78 (0.4–1.2). Using the surf similarity (Iribarren) parameter ξ₀ = tan(α)/√(H₀/L₀), breakers are classified as Spilling (ξ₀ < 0.5, mild slopes, occurs in deep & shallow water), Plunging (0.5 < ξ₀ < 3.3, curling tongue, occurs in deep & shallow water), or Surging/Collapsing (ξ₀ > 3.3, steep beach, occurs only in shallow water).",
+        "equations": "Deep: H₀/L₀ < 1/7;   Shallow: H_b/h_b ≈ 0.78 (or Goda 2010);   ξ₀ = tan(α)/√(H₀/L₀)",
+        "trap": "Goda (2010) incorporates beach slope s and relative breaking depth h_b/L₀, whereas H_b/h_b = 0.78 is a simple constant approximation.",
+    },
+]
+
+# ==========================================
+# 4A. MODULE 15: NONLINEAR WAVE THEORIES
+# ==========================================
+if selected_module == "🔥 M15: Nonlinear Wave Theories":
+    st.markdown('<div class="main-title">Module 15: Nonlinear Wave Theories (Stokes 2nd-Order & Le Méhauté)</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sub-title">Stokes 2nd-Order Surface Profile η(x,t), Crest/Trough Asymmetry, Ursell Number (U_r), & Le Méhauté (1976) Wave Theory Selection</div>', unsafe_allow_html=True)
+
+    m15_mode = st.radio(
+        "Select Problem Type:",
+        (
+            "Stokes 2nd-Order Wave Surface Profile & 5-Point Table (L15-P1, L15-Ex2)",
+            "Ursell Number (U_r) & Le Méhauté (1976) Wave Theory Selection (L15-P2, L15-Ex1, L15-Ex3)",
+        ),
+        horizontal=True,
+    )
+
+    if m15_mode.startswith("Stokes 2nd-Order"):
+        c1, c2, c3, c4 = st.columns(4)
+        h_in = c1.number_input("Water Depth h [m]", value=28.0, step=0.5)
+        T_in = c2.number_input("Wave Period T [s]", value=7.0, step=0.5)
+        H_in = c3.number_input("Wave Height H [m]", value=3.5, step=0.5)
+        t_raw = c4.text_input("Time t [s] (e.g. 0, T, T/2)", value="0")
+
+        d = solve_dispersion_relation(h_in, T_in, g_in, solver_method)
+        L = d["L"]
+        L0 = d["L0"]
+        k = d["k"]
+        kh = d["kh"]
+        sigma = d["sigma"]
+        t_val = float(eval(t_raw, {"T": T_in, "L": L, "h": h_in, "pi": np.pi}))
+
+        A1 = H_in / 2.0
+        A2 = (np.pi * H_in / 8.0) * (H_in / L) * (np.cosh(kh) / (np.sinh(kh) ** 3)) * (2.0 + np.cosh(2.0 * kh))
+
+        pts = [
+            ("0", 0.0),
+            ("L/4", L / 4.0),
+            ("L/2", L / 2.0),
+            ("3L/4", 3.0 * L / 4.0),
+            ("L", L),
+        ]
+        rows = []
+        for frac_lbl, x_val in pts:
+            phase = k * x_val - sigma * t_val
+            eta1 = A1 * np.cos(phase)
+            eta2 = A2 * np.cos(2.0 * phase)
+            eta_stokes = eta1 + eta2
+            rows.append({
+                "x (fraction)": frac_lbl,
+                "x (m)": f"{x_val:.3f}",
+                "Small-amplitude wave theory η (m)": f"{eta1:.3f}",
+                "2nd-Order Correction η₂ (m)": f"{eta2:+.3f}",
+                "Stokes 2nd order wave theory η (m)": f"{eta_stokes:.3f}",
+            })
+
+        traps = [
+            ("M15 Trap #1 — Stokes 2nd-Order Uses Linear Dispersion", f"Stokes 2nd-order uses σ² = gk tanh(kh), giving L = {L:.3f} m and k = {k:.3f} rad/m ({k:.4f} rad/m). Dispersion corrections only occur at 3rd order and above!"),
+            ("M15 Trap #2 — Crest Reinforcement vs. Trough Opposition", f"At crests (x = 0, L), η₁ and η₂ reinforce: η = {A1:.3f} + {A2:.3f} = {A1+A2:.3f} m. At the trough (x = L/2), they oppose: η = -{A1:.3f} + {A2:.3f} = {-A1+A2:.3f} m. At x = L/4 and 3L/4, Linear η = 0.000 m while Stokes 2nd η = -{A2:.3f} m!"),
+        ]
+        ovals = [
+            ("Deep Wavelength", "L₀", f"{L0:.3f}", "m"),
+            ("Local Wavelength", "L", f"{L:.3f}", "m"),
+            ("Wavenumber", "k", f"{k:.3f}", f"rad/m ({k:.4f})"),
+            ("Dimensionless kh", "kh", f"{kh:.4f}", "-"),
+            ("Linear Amplitude", "A₁ = H/2", f"{A1:.3f}", "m"),
+            ("Stokes 2nd Amplitude", "A₂", f"{A2:.3f}", "m"),
+        ]
+        finals = [
+            ("x = 0 and x = L (Wave Crest)", "η_crest", f"{A1+A2:.3f}", "m", f"Linear η₁ = {A1:.3f} m | Stokes 2nd = {A1+A2:.3f} m"),
+            ("x = L/4 & 3L/4 (Zero-Crossings)", "η_L/4", f"{-A2:.3f}", "m", f"Linear η₁ = 0.000 m | Stokes 2nd = {-A2:.3f} m"),
+            ("x = L/2 (Wave Trough)", "η_trough", f"{-A1+A2:.3f}", "m", f"Linear η₁ = {-A1:.3f} m | Stokes 2nd = {-A1+A2:.3f} m"),
+            ("Wavelength & Wavenumber", "L, k", f"{L:.3f} m, {k:.3f}", "rad/m", "Matches Dr. Wei L15-P1 Answer Key"),
+        ]
+        explanation = (
+            f"At h = {h_in} m and T = {T_in} s, the wavelength is L = {L:.3f} m and the wave number is k = {k:.3f} rad/m. "
+            f"The linear amplitude is H/2 = {A1:.3f} m and the 2nd-order Stokes harmonic amplitude is A₂ = {A2:.3f} m. "
+            f"The two components reinforce each other at the wave crest (η = {A1+A2:.3f} m at x = 0 and L) and oppose each other "
+            f"at the wave trough (η = {-A1+A2:.3f} m at x = L/2), producing vertical asymmetry with steeper, more peaked wave crests "
+            f"and flatter, shallower wave troughs than a linear cosine profile."
+        )
+        render_goodnotes_terminal(
+            f"h = {h_in} m   T = {T_in} s   H = {H_in} m   t = {t_raw} ({t_val:.1f} s)   g = {g_in} m/s²",
+            "Wavelength L, wave number k, and water surface profile η(x,t) for Linear and Stokes 2nd-Order wave theory at x = 0, L/4, L/2, 3L/4, and L",
+            [
+                "σ² = gk tanh(kh)   ⇒   L = L₀ tanh(2πh/L),   k = 2π/L",
+                "η_linear(x,t) = (H / 2) cos(kx - σt)",
+                "η_Stokes2(x,t) = (H/2)cos(kx - σt) + (πH/8)(H/L)[cosh(kh)/sinh³(kh)](2 + cosh 2kh)cos 2(kx - σt)",
+            ],
+            ovals,
+            finals,
+            explanation,
+            traps,
+        )
+        st.markdown("#### 📊 Complete 5-Point Surface Profile Table (Copy Directly Into Your Exam Sheet)")
+        st.table(rows)
+    else:
+        c1, c2, c3 = st.columns(3)
+        h_in = c1.number_input("Water Depth h [m]", value=150.0, step=0.5)
+        T_in = c2.number_input("Wave Period T [s]", value=16.0, step=0.5)
+        H_in = c3.number_input("Wave Height H [m]", value=10.0, step=0.5)
+
+        d = solve_dispersion_relation(h_in, T_in, g_in, solver_method)
+        L = d["L"]
+        L0 = d["L0"]
+        steep = H_in / L
+        rel_depth = h_in / L
+        rel_height = H_in / h_in
+        Ur = (H_in * (L ** 2)) / (h_in ** 3)
+        dim_H = H_in / (g_in * (T_in ** 2))
+        dim_h = h_in / (g_in * (T_in ** 2))
+        theory_name, ur_comment = classify_le_mehaute(h_in, T_in, H_in, g_in, L, L0)
+
+        traps = [
+            ("M15 Trap #3 — Le Méhauté (1976) Dimensionless Axes & Notation", f"Vertical axis: H/(gT²) = {dim_H:.3f} ({dim_H:.4f}); Horizontal axis: h/(gT²) = {dim_h:.2f} ({dim_h:.4f}). Remember Le Méhauté uses λ for L and τ for T!"),
+            ("M15 Trap #4 — Ursell Number Transition (U_r ≈ 20–26)", f"U_r = (H·L²)/h³ = {Ur:.2f}. Small U_r (≪ 26) indicates weak shallow-water nonlinearity (Stokes/Linear regime); large U_r (> 26) indicates strong shallow-water nonlinearity (Cnoidal/Solitary regime)."),
+        ]
+        ovals = [
+            ("Deep Wavelength", "L₀", f"{L0:.3f}", "m"),
+            ("Local Wavelength", "L", f"{L:.3f}", "m"),
+            ("Wave Steepness", "H/L", f"{steep:.4f}", "-"),
+            ("Relative Depth", "h/L", f"{rel_depth:.4f}", "-"),
+            ("Relative Height", "H/h", f"{rel_height:.4f}", "-"),
+            ("Gravity Scale", "gT²", f"{g_in*(T_in**2):.2f}", "m"),
+        ]
+        finals = [
+            ("a) Ursell Number", "U_r", f"{Ur:.2f}", "-", f"Exact 3-dec: {Ur:.3f}  [Formula: H·L²/h³]"),
+            ("b1) Dimensionless Wave Height", "H/(gT²)", f"{dim_H:.3f}", "-", f"Exact: {dim_H:.5f} (Vertical Axis)"),
+            ("b2) Dimensionless Water Depth", "h/(gT²)", f"{dim_h:.2f}", "-", f"Exact: {dim_h:.4f} (Horizontal Axis)"),
+            ("c) Selected Wave Theory", "Theory", theory_name, "", "From Le Méhauté (1976) diagram"),
+        ]
+        explanation = (
+            f"a) The Ursell number is about U_r = {Ur:.2f} ({Ur:.3f}).  "
+            f"b) Dimensionless wave height H/(gT²) = {dim_H:.3f} ({dim_H:.4f}); dimensionless water depth h/(gT²) = {dim_h:.2f} ({dim_h:.4f}).  "
+            f"c) {theory_name} should be applied.  "
+            f"d) {ur_comment}"
+        )
+        render_goodnotes_terminal(
+            f"h = {h_in} m   T = {T_in} s   H = {H_in} m   g = {g_in} m/s²",
+            "a) Ursell number U_r;  b) Dimensionless wave height H/(gT²) & depth h/(gT²);  c) Wave theory from Le Méhauté (1976);  d) Consistency explanation",
+            [
+                "L₀ = (gT²)/(2π),   L = L₀ tanh(2πh/L)",
+                "U_r = (H / L) / (h / L)³ = (H · L²) / h³",
+                "Dimensionless Wave Height = H / (gT²),   Dimensionless Water Depth = h / (gT²)",
+            ],
+            ovals,
+            finals,
+            explanation,
+            traps,
+        )
+
+# ==========================================
+# 4B. MODULE 16: SOLITARY WAVES & TSUNAMIS
+# ==========================================
+elif selected_module == "🔥 M16: Solitary Waves & Tsunamis":
+    st.markdown('<div class="main-title">Module 16: Solitary Wave Theory & Tsunamis</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sub-title">Solitary Wave Speed C = √(g(h+H)), Displaced Volume V, Total Energy E, & Tsunami Shoaling via Green’s Law</div>', unsafe_allow_html=True)
+
+    m16_mode = st.radio(
+        "Select Problem Type:",
+        (
+            "Solitary Wave Speed, Displaced Volume & Total Energy (L16-P1, L16-Ex1, L16-Ex2)",
+            "Tsunami Propagation & Green's Law Shoaling (L16-P2, L16-Ex2, L16-Ex3)",
+        ),
+        horizontal=True,
+    )
+
+    if m16_mode.startswith("Solitary Wave"):
+        c1, c2 = st.columns(2)
+        H_in = c1.number_input("Solitary Wave Height H [m]", value=1.5, step=0.5)
+        h_in = c2.number_input("Water Depth h [m]", value=15.0, step=0.5)
+
+        C_sol = np.sqrt(g_in * (h_in + H_in))
+        C_shal = np.sqrt(g_in * h_in)
+        V_sol = np.sqrt((16.0 / 3.0) * (h_in ** 3) * H_in)
+        gamma = H_in / h_in
+        E_sol = (8.0 / 3.0) * rho_in * g_in * (h_in ** 3) * gamma * np.sqrt(gamma / 3.0)
+
+        traps = [
+            ("M16 Trap #1 — SI Units of V [m²] and E [kg·m/s² or J/m]", "Displaced volume per unit crest width V has SI units of m² (m³/m), and total energy per unit crest width E has SI units of kg·m/s² (or J/m = N)."),
+            ("M16 Trap #2 — Solitary Speed C = √(g(h+H)) vs. Shallow Speed C = √(gh)", f"Solitary wave speed includes wave height H: C = √(g(h+H)) = {C_sol:.2f} m/s vs. linear shallow-water speed √(gh) = {C_shal:.2f} m/s."),
+        ]
+        ovals = [
+            ("Total Crest Depth", "h + H", f"{h_in + H_in:.2f}", "m"),
+            ("Relative Height", "γ = H/h", f"{gamma:.4f}", "-"),
+            ("Energy Root Factor", "√(γ/3)", f"{np.sqrt(gamma/3.0):.4f}", "-"),
+            ("Volume Radicand", "(16/3)h³H", f"{(16.0/3.0)*(h_in**3)*H_in:.1f}", "m⁴"),
+        ]
+        finals = [
+            ("a1) Solitary-Wave Speed", "C", f"{C_sol:.2f}", "m/s", f"Exact 3-dec: {C_sol:.3f} m/s  [√(g(h+H))]"),
+            ("a2) Shallow-Water Wave Speed", "C_shallow", f"{C_shal:.2f}", "m/s", f"Exact 3-dec: {C_shal:.3f} m/s  [√(gh)]"),
+            ("b) Volume per Unit Crest Width", "V", f"{V_sol:.2f}", "m²", f"Exact 3-dec: {V_sol:.3f} m²  [√((16/3)h³H)]"),
+            ("c) Total Energy per Crest Width", "E", f"{E_sol:.2f}", "kg·m/s²", f"Evenly split: KE = PE = {E_sol/2.0:.2f} kg·m/s² (J/m)"),
+        ]
+        explanation = (
+            f"a) Solitary-wave speed: C = √[g(h + H)] = {C_sol:.2f} m/s, and shallow-water wave speed: C_shallow = √(gh) = {C_shal:.2f} m/s "
+            f"(the solitary wave travels faster because its phase speed increases with wave amplitude H).  "
+            f"b) Displaced volume per unit crest width: V = [(16/3)h³H]^(1/2) = {V_sol:.2f} m².  "
+            f"c) With γ = H/h = {gamma:.3f}, total energy per unit crest width: E = (8/3)ρgh³γ√(γ/3) = {E_sol:.2f} kg·m/s²."
+        )
+        render_goodnotes_terminal(
+            f"H = {H_in} m   h = {h_in} m   ρ = {rho_in} kg/m³   g = {g_in} m/s²",
+            "a) Solitary-wave speed C & comparison with shallow-water speed;  b) Displaced volume per unit crest width V;  c) Total energy per unit crest width E",
+            [
+                "C = √[g(h + H)],   C_shallow = √(gh)",
+                "V = [ (16 / 3) · h³ · H ]^(1/2)   [SI unit: m²]",
+                "E = (8 / 3) · ρ · g · h³ · γ · √(γ / 3)   where γ = H / h   [SI unit: kg·m/s²]",
+            ],
+            ovals,
+            finals,
+            explanation,
+            traps,
+        )
+    else:
+        c1, c2, c3, c4 = st.columns(4)
+        T_min = c1.number_input("Tsunami Period T [minutes]", value=45.0, step=0.5, help="Converted automatically to seconds (45 min = 2700 s)")
+        H1_in = c2.number_input("Offshore Tsunami Height H₁ [m]", value=0.75, step=0.25)
+        h1_km = c3.number_input("Offshore Ocean Depth h₁ [km]", value=6.0, step=0.5, help="Converted automatically to meters (6 km = 6000 m)")
+        h2_m = c4.number_input("Nearshore Water Depth h₂ [m]", value=20.0, step=0.5)
+
+        T_sec = T_min * 60.0
+        h1_m = h1_km * 1000.0
+        Ks_green = (h1_m / h2_m) ** 0.25
+        H2_m = H1_in * Ks_green
+
+        # Dr. Wei 16p.pdf Answer Key convention (uses C = sqrt(g*(h+H)))
+        C1_key = np.sqrt(g_in * (h1_m + H1_in))
+        L1_key = C1_key * T_sec
+        rel_h1 = h1_m / L1_key
+        C2_key = np.sqrt(g_in * (h2_m + H2_m))
+        L2_key = C2_key * T_sec
+
+        # Pure Linear Shallow-Water formula (Slide 18: C = sqrt(g*h))
+        C1_lin = np.sqrt(g_in * h1_m)
+        L1_lin = C1_lin * T_sec
+        C2_lin = np.sqrt(g_in * h2_m)
+        L2_lin = C2_lin * T_sec
+
+        traps = [
+            ("M16 Trap #3 — CRITICAL L16-P2 Answer Key Discovery (√(g(h+H)) vs. √(gh))", f"In 16p.pdf, Dr. Wei's key computed H₂ = {H2_m:.2f} m via Green's Law and used C = √(g(h+H)) to get C₁ = {C1_key:.2f} m/s, L₁ = {L1_key:.1f} m, C₂ = {C2_key:.2f} m/s, and L₂ = {L2_key:.2f} m! Meanwhile, Slide 18 writes C = √(gh) (giving C₁ = {C1_lin:.2f} m/s, L₁ = {L1_lin:.1f} m, C₂ = {C2_lin:.2f} m/s, L₂ = {L2_lin:.2f} m). Both are shown below—write BOTH on your exam sheet for guaranteed 100% credit!"),
+            ("M16 Trap #4 — Unit Conversions (min → s and km → m)", f"T = {T_min} min = {T_sec:.0f} s, and h₁ = {h1_km} km = {h1_m:.0f} m."),
+        ]
+        ovals = [
+            ("Period in Seconds", "T", f"{T_sec:.0f}", "s"),
+            ("Offshore Depth", "h₁", f"{h1_m:.0f}", "m"),
+            ("Green's Law K_s", "(h₁/h₂)^(1/4)", f"{Ks_green:.4f}", "-"),
+            ("Relative Depth", "h₁/L₁", f"{rel_h1:.3f}", "< 0.05 (Shallow)"),
+            ("Linear √(gh₁)", "C₁,lin", f"{C1_lin:.2f}", f"m/s (L₁={L1_lin:.1f}m)"),
+            ("Linear √(gh₂)", "C₂,lin", f"{C2_lin:.2f}", f"m/s (L₂={L2_lin:.2f}m)"),
+        ]
+        finals = [
+            ("a1) Offshore Wave Speed C₁", "C₁", f"{C1_key:.2f}", "m/s", f"16p.pdf Key √(g(h₁+H₁)) = {C1_key:.2f} m/s | Linear √(gh₁) = {C1_lin:.2f} m/s"),
+            ("a2) Offshore Wavelength L₁", "L₁", f"{L1_key:.1f}", "m", f"h₁/L₁ = {rel_h1:.3f} < 0.05 (Shallow Wave! Linear L₁ = {L1_lin:.1f} m)"),
+            ("c) Nearshore Tsunami Height H₂", "H₂", f"{H2_m:.2f}", "m", f"Green's Law: H₁(h₁/h₂)^(1/4) = {H2_m:.3f} m"),
+            ("b) Nearshore Speed C₂ & Wavelength L₂", "C₂, L₂", f"{C2_key:.2f} m/s, {L2_key:.2f}", "m", f"Linear √(gh₂): C₂ = {C2_lin:.2f} m/s, L₂ = {L2_lin:.2f} m"),
+        ]
+        explanation = (
+            f"Offshore location (h₁ = {h1_m:.0f} m): Wave speed C₁ = {C1_key:.2f} m/s (or {C1_lin:.2f} m/s via √gh₁) and wavelength "
+            f"L₁ = {L1_key:.1f} m (or {L1_lin:.1f} m). Relative depth h₁/L₁ = {rel_h1:.3f}, which is smaller than 0.05, verifying that the tsunami "
+            f"behaves as a shallow-water wave even though the local ocean depth is {h1_km} km.  "
+            f"Nearshore location (h₂ = {h2_m} m): By Green's Law, wave height H₂ = H₁(h₁/h₂)^(1/4) = {H2_m:.2f} m, wave speed C₂ = {C2_key:.2f} m/s "
+            f"(or {C2_lin:.2f} m/s via √gh₂), and wavelength L₂ = {L2_key:.2f} m (or {L2_lin:.2f} m).  "
+            f"The comparison shows that as the tsunami propagates into shallower water, wave speed decreases, wavelength decreases, and wave height increases."
+        )
+        render_goodnotes_terminal(
+            f"T = {T_min} min ({T_sec:.0f} s)   H₁ = {H1_in} m   h₁ = {h1_km} km ({h1_m:.0f} m)   h₂ = {h2_m} m   g = {g_in} m/s²",
+            "a) C₁, L₁ at 6 km & shallow-water verification;  b) C₂, L₂ at 20 m;  c) Nearshore wave height H₂;  d) Comparison of C, L, and H",
+            [
+                "C = √(gh)  [or Solitary Key: C = √(g(h + H))],   L = C · T,   Shallow-water check: h₁ / L₁ < 0.05",
+                "[EC_g]₁ = [EC_g]₂   ⇒   H₂ / H₁ = K_s = (C_g1 / C_g2)^(1/2) = (h₁ / h₂)^(1/4)   [Green's Law]",
+            ],
+            ovals,
+            finals,
+            explanation,
+            traps,
+        )
+
+# ==========================================
+# 4C. OPEN-ENDED EXAM Q&A SYNTHESIZER
+# ==========================================
+elif selected_module == "🧠 Open-Ended Exam Q&A Synthesizer":
+    st.markdown('<div class="main-title">🧠 Dr. Wei Open-Ended Exam Question Synthesizer (Modules 07–16)</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sub-title">Type any conceptual or open-ended exam question to get the exact Dr. Wei lecture slide answer, required equations, and grading traps.</div>', unsafe_allow_html=True)
+
+    col_q, col_f, col_k = st.columns([3, 1, 1.5])
+    query_str = col_q.text_input("🔍 Type or Paste Your Open-Ended Exam Question:", placeholder="e.g. Why does wave break in deep water vs shallow water? Why don't we say tsunami wave? How to derive radiation stress?")
+    mod_filter = col_f.selectbox("Filter by Module:", ("ALL", "M15", "M16", "M14", "M13", "M12"))
+    default_key = st.secrets.get("GEMINI_API_KEY", "") if hasattr(st, "secrets") else ""
+    api_key_in = col_k.text_input("✨ Gemini API Key (Optional):", value=default_key, type="password", help="Offline synthesis works automatically. Paste an AIza... Gemini API key to also synthesize custom answers with Gemini 2.5.")
+
+    if st.button("✨ Synthesize Custom Answer with High-Level Gemini AI (Grounded in EGN 330 Slides)"):
+        if not query_str.strip():
+            st.warning("Please type an open-ended exam question above first.")
+        elif not api_key_in.strip():
+            st.info("No Gemini API key entered — using Instant Pre-Loaded EGN 330 Slide Synthesizer below (paste an AIza... key above for live cloud synthesis).")
+        else:
+            import json, urllib.request
+            digest = "\n".join([f"[{x['mod']}] {x['title']}: Q: {x['question']} | A: {x['answer']} | Eq: {x['equations']}" for x in EGN330_QA_BANK])
+            prompt = (
+                "You are Thalassa, the EGN 330 Coastal Wave Mechanics Exam Assistant for Dr. Zhangping (John) Wei at UNCW. "
+                "Answer the student's open-ended exam question concisely and using Dr. Wei's exact slide terminology, equations, and physical reasoning for 100% full credit. "
+                "Provide:\n1) DIRECT EXAM PARAGRAPH TO WRITE DOWN (2-4 crisp sentences)\n2) KEY EQUATIONS & SYMBOLS TO INCLUDE\n3) EXAM GRADING TRAP TO AVOID\n\n"
+                f"Course Lecture Knowledge Base:\n{digest}\n\nStudent Exam Question: {query_str}"
+            )
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key_in.strip()}"
+            req = urllib.request.Request(
+                url,
+                data=json.dumps({"contents": [{"parts": [{"text": prompt}]}], "generationConfig": {"temperature": 0.15}}).encode("utf-8"),
+                headers={"Content-Type": "application/json"},
+                method="POST",
+            )
+            try:
+                with urllib.request.urlopen(req, timeout=20) as resp:
+                    resp_data = json.loads(resp.read().decode("utf-8"))
+                    ai_text = resp_data.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "No response.")
+                    st.markdown("#### ✨ Live Gemini 2.5 Synthesis (Grounded in EGN 330 Slides)")
+                    st.markdown(f'<div class="gn-grey-box">{ai_text}</div>', unsafe_allow_html=True)
+                    st.code(ai_text, language=None)
+            except Exception as e:
+                st.error(f"Gemini API Error: {e}. Using Instant Pre-Loaded Slide Synthesizer below.")
+
+    tokens = [t for t in query_str.lower().split() if len(t) > 1]
+    scored = []
+    for item in EGN330_QA_BANK:
+        if mod_filter != "ALL" and item["mod"] != mod_filter:
+            continue
+        if not tokens:
+            scored.append((1, item))
+        else:
+            hay = f"{item['title']} {item['keywords']} {item['question']} {item['answer']} {item['equations']}".lower()
+            s = 25 if query_str.lower() in hay else 0
+            for tk in tokens:
+                if tk in hay:
+                    s += 5
+            if s > 0:
+                scored.append((s, item))
+    scored.sort(key=lambda x: x[0], reverse=True)
+    results = [x[1] for x in scored] if scored else EGN330_QA_BANK
+
+    if results:
+        top = results[0]
+        st.markdown("#### 🎯 Top Full-Credit Exam Answer (Copy Directly Into Your Exam Sheet)")
+        st.markdown(f'<div class="gn-grey-box"><strong>[{top["mod"]} — {top["title"]}]</strong><br><strong>Q:</strong> {top["question"]}<br><br><strong>FULL-CREDIT EXAM ANSWER:</strong><br>{top["answer"]}<br><br><strong>EQUATIONS TO WRITE:</strong> {top["equations"]}</div>', unsafe_allow_html=True)
+        st.code(top['answer'] + chr(10) + chr(10) + "Equations: " + top['equations'], language=None)
+
+    st.markdown("#### 📚 Matching EGN 330 Lecture Slide Topics")
+    for it in results:
+        with st.expander(f"[{it['mod']}] {it['title']} — {it['question']}", expanded=(len(results) <= 4)):
+            st.markdown(f'<div class="gn-grey-box">{it["answer"]}</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="gn-formula-item"><strong>Required Equations:</strong> {it["equations"]}</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="trap-alert"><strong>⚠️ Grading Trap:</strong> {it["trap"]}</div>', unsafe_allow_html=True)
+            st.code(it["answer"], language=None)
+
+# ==========================================
+# 4D. MODULE 14: WAVE SET-UP & SET-DOWN
+# ==========================================
+elif selected_module == "🔥 M14: Wave Set-Up & Set-Down":
     st.markdown('<div class="main-title">Module 14: Wave Set-Up & Wave Set-Down</div>', unsafe_allow_html=True)
     st.markdown('<div class="sub-title">Shoaling Wave Set-Down (η̄), Komar & Gaughan (1973) + Weggel (1972) Breaking Depth (h_b), and Surf-Zone Linear Wave Set-Up Function η̄(h)</div>', unsafe_allow_html=True)
 
